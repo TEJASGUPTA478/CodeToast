@@ -1,16 +1,18 @@
-# React + Vite
+CodeToast 🔥
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Describe your portfolio. Get destroyed. Improve.
 
-Currently, two official plugins are available:
+CodeToast is an AI-powered web app that gives developers brutally honest (and hilarious) feedback on their portfolios — then follows up with real, actionable tips to actually fix them.
+Built with React, Tailwind CSS, and the Claude API.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## React Compiler
+What it does
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Paste a description of your portfolio, projects, or tech stack
+grok ai roasts it with sharp, funny, senior-developer energy
+Get 3 genuine improvement tips at the end of every roast
+Adjust roast intensity — Mild, Medium, or Savage
+Copy your roast to clipboard and share it on Twitter/LinkedIn
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+

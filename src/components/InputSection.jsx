@@ -1,32 +1,49 @@
+// InputSection.jsx - Handles user input and API call to get the roast
+// User can either paste a URL or type a description of their portfolio
+// When they click "Toast Me", it sends the data to Groq's LLM API
+
 import { useState } from 'react'
 
+// read API key from .env file (VITE_ prefix makes it available in browser)
 const API_KEY = import.meta.env.VITE_GROQ_API_KEY
+
+// Groq uses an OpenAI-compatible endpoint
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
 export default function InputSection({ setRoast, setLoading, setError }) {
+  // what the user typed in the input field
   const [input, setInput] = useState('')
-  const [mode, setMode] = useState('url') // 'url' or 'description'
 
+  // toggle between URL mode and description mode
+  const [mode, setMode] = useState('url')
+
+  // called when user clicks the "Toast Me" button
   const handleRoast = async () => {
+    // don't do anything if input is empty
     if (!input.trim()) {
       setError('Please enter a portfolio URL or description first.')
       return
     }
 
+    // clear previous results and start loading
     setError('')
     setRoast('')
     setLoading(true)
 
-    const prompt =
-      mode === 'url'
-        ? `Here is someone's portfolio website URL: ${input}
+    // build the prompt based on which mode is selected
+    let prompt = ''
+    if (mode === 'url') {
+      prompt = `Here is someone's portfolio website URL: ${input}
 
 Roast this portfolio brutally but in a funny, constructive way. Tear apart the design choices, project descriptions, skill claims, and overall presentation. Be savage but helpful. Point out clichés, overused patterns, and things that make hiring managers cringe. Use humor, sarcasm, and wit. End with one genuinely useful piece of advice. Max 300 words.`
-        : `Here is someone describing their portfolio: "${input}"
+    } else {
+      prompt = `Here is someone describing their portfolio: "${input}"
 
 Based on this description, roast this portfolio brutally but in a funny, constructive way. Tear apart the design choices, project descriptions, skill claims, and overall presentation. Be savage but helpful. Point out clichés, overused patterns, and things that make hiring managers cringe. Use humor, sarcasm, and wit. End with one genuinely useful piece of advice. Max 300 words.`
+    }
 
     try {
+      // send the request to Groq's API
       const response = await fetch(GROQ_URL, {
         method: 'POST',
         headers: {
@@ -34,7 +51,7 @@ Based on this description, roast this portfolio brutally but in a funny, constru
           'Authorization': `Bearer ${API_KEY}`
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
+          model: 'llama-3.3-70b-versatile',  // the AI model we're using
           messages: [
             {
               role: 'system',
@@ -45,11 +62,12 @@ Based on this description, roast this portfolio brutally but in a funny, constru
               content: prompt
             }
           ],
-          temperature: 0.9,
-          max_completion_tokens: 1024,
+          temperature: 0.9,             // higher = more creative responses
+          max_completion_tokens: 1024,   // limit response length
         }),
       })
 
+      // if the API returned an error status, throw it
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw {
@@ -58,16 +76,21 @@ Based on this description, roast this portfolio brutally but in a funny, constru
         }
       }
 
+      // parse the JSON response and grab the text
       const data = await response.json()
-      const text = data.choices?.[0]?.message?.content
+      const text = data.choices[0].message.content
 
       if (!text) {
         throw { message: 'No response text received from Groq.' }
       }
 
+      // send the roast text back to App
       setRoast(text)
+
     } catch (err) {
+      // handle different error types with friendly messages
       console.error('API Error:', err)
+
       if (err.status === 400) {
         setError('Bad request — check if your API key or model is valid.')
       } else if (err.status === 401) {
@@ -77,11 +100,14 @@ Based on this description, roast this portfolio brutally but in a funny, constru
       } else {
         setError(err.message || 'Something went wrong. Check the console for details.')
       }
+
     } finally {
+      // always stop the loading spinner, whether success or failure
       setLoading(false)
     }
   }
 
+  // let user press Enter to submit when in URL mode
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey && mode === 'url') {
       e.preventDefault()
@@ -90,30 +116,25 @@ Based on this description, roast this portfolio brutally but in a funny, constru
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Mode Toggle */}
-      <div className="flex gap-2 justify-center">
+    <div className="inp-wrap">
+
+      {/* tabs to switch between URL input and text description */}
+      <div className="tabs">
         <button
           onClick={() => { setMode('url'); setInput('') }}
-          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 cursor-pointer ${mode === 'url'
-              ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
-              : 'bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-            }`}
+          className={`tab ${mode === 'url' ? 'tab--on' : ''}`}
         >
           🌐 Portfolio URL
         </button>
         <button
           onClick={() => { setMode('description'); setInput('') }}
-          className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 cursor-pointer ${mode === 'description'
-              ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/25'
-              : 'bg-gray-800/80 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-            }`}
+          className={`tab ${mode === 'description' ? 'tab--on' : ''}`}
         >
           📝 Describe It
         </button>
       </div>
 
-      {/* Input */}
+      {/* show either a URL input or a textarea based on selected mode */}
       {mode === 'url' ? (
         <input
           type="url"
@@ -121,7 +142,7 @@ Based on this description, roast this portfolio brutally but in a funny, constru
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full bg-gray-900/80 border border-gray-700 rounded-xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-300 text-base"
+          className="url-inp"
         />
       ) : (
         <textarea
@@ -129,22 +150,17 @@ Based on this description, roast this portfolio brutally but in a funny, constru
           value={input}
           onChange={(e) => setInput(e.target.value)}
           rows={5}
-          className="w-full bg-gray-900/80 border border-gray-700 rounded-xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-300 resize-none text-base"
+          className="desc-inp"
         />
       )}
 
-      {/* Roast Button */}
-      <button
-        onClick={handleRoast}
-        className="group relative w-full overflow-hidden bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 active:scale-[0.98] text-white font-bold py-4 rounded-xl text-lg transition-all duration-300 shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 cursor-pointer"
-      >
-        <span className="relative z-10 flex items-center justify-center gap-2">
-          🔥 Roast Me
-        </span>
+      {/* main submit button */}
+      <button onClick={handleRoast} className="roast-btn">
+        <span>Roast Me</span>
       </button>
 
-      {/* Disclaimer */}
-      <p className="text-center text-gray-600 text-xs">
+      {/* small disclaimer at the bottom */}
+      <p className="note">
         Powered by Groq AI · All roasts are AI-generated · Don't cry, improve.
       </p>
     </div>
